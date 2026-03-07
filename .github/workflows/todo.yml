@@ -1,0 +1,17 @@
+name: TODO to Issues
+on: [push, pull_request]
+jobs:
+  todo:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # For URL insertion
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: TODO to Issue
+        uses: alstr/todo-to-issue-action@v5
+        with:
+          INSERT_ISSUE_URLS: "true" # Adds [#123] back to code
+          CLOSE_ISSUES: "true"
+          PROJECT: "user/5ammiP/con" # Uncomment + add PAT secret for auto-board add

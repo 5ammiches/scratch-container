@@ -44,6 +44,7 @@ func CreateContainer(cfg *ContainerConfig) (*Container, error) {
 
 	extract(img, rootfsPath)
 
+	// create container state data json as "created"
 	s := &State{
 		Status: StatusCreated,
 		PID:    0,
@@ -60,6 +61,7 @@ func CreateContainer(cfg *ContainerConfig) (*Container, error) {
 		return nil, fmt.Errorf("error creating state file %s: %w", stateJson, err)
 	}
 
+	// create container data json
 	c := &Container{
 		ID:         id,
 		Name:       name,
@@ -72,7 +74,7 @@ func CreateContainer(cfg *ContainerConfig) (*Container, error) {
 		CreatedAt:  time.Now(),
 	}
 
-	containerData, err := json.Marshal(c)
+	containerData, err := json.MarshalIndent(c, " ", " ")
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling json")
 	}
@@ -86,15 +88,88 @@ func CreateContainer(cfg *ContainerConfig) (*Container, error) {
 	return c, nil
 }
 
-func GetContainer(c Container) (Container, error) {
+func ListContainers() ([]ContainerListItem, error) {
+	dirs, err := os.ReadDir(BASE_DIR)
+	if err != nil {
+		return nil, fmt.Errorf("error reading directory: %w\n", err)
+	}
+
+	var res []ContainerListItem
+	for _, item := range dirs {
+		if !item.IsDir() {
+			continue
+		}
+
+		containerFile := filepath.Join(BASE_DIR, item.Name(), "container.json")
+		stateFile := filepath.Join(BASE_DIR, item.Name(), "state.json")
+
+		c, err := readContainerData(containerFile)
+		if err != nil {
+			return nil, fmt.Errorf("error reading container data in %s: %w\n", item.Name(), err)
+		}
+
+		s, err := readStateData(stateFile)
+		if err != nil {
+			return nil, fmt.Errorf("error reading state data in %s: %w\n", item.Name(), err)
+		}
+
+		cli := ContainerListItem{
+			ID:        c.ID,
+			Name:      c.Name,
+			Image:     c.Image,
+			Status:    s.Status,
+			RootFS:    c.RootFS,
+			CreatedAt: c.CreatedAt,
+		}
+		res = append(res, cli)
+	}
+
+	return res, nil
+}
+
+func readContainerData(dir string) (*Container, error) {
+	containerData, err := os.ReadFile(dir)
+	if err != nil {
+		return nil, fmt.Errorf("Error reading container data in %s: %w\n", dir, err)
+	}
+
+	c := &Container{}
+	json.Unmarshal(containerData, &c)
 	return c, nil
 }
 
-func UpdateContainer(c Container) (Container, error) {
-	return c, nil
+func readStateData(dir string) (*State, error) {
+	stateData, err := os.ReadFile(dir)
+	if err != nil {
+		return nil, fmt.Errorf("Error reading state data in %s: %w\n", dir, err)
+	}
+
+	s := &State{}
+	json.Unmarshal(stateData, &s)
+	return s, nil
 }
 
-func DeleteContainer(c Container) error {
+// TODO return all fields of container + status for container by ID
+func GetContainer(ID string) (*Container, *State, error) {
+	dir := filepath.Join(BASE_DIR, ID)
+
+	c, err := readContainerData(dir)
+	if err != nil {
+
+	}
+
+	return nil, nil, nil
+}
+
+// TODO in future add name or ID option to CLI get container command then resolve name->ID handle
+
+// TODO implement container update
+func UpdateContainer(c *Container) error {
+	return nil
+}
+
+// TODO implement container deletion
+func DeleteContainer(c *Container) error {
 	return nil
 }
 

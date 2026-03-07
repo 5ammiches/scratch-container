@@ -32,3 +32,12 @@ type State struct {
 	ExitCode int       `json:"exit_code,omitempty"`
 	ExitedAt time.Time `json:"exited_at,omitempty"`
 }
+
+type ContainerListItem struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Image     string    `json:"image"`
+	Status    Status    `json:"status"`
+	RootFS    string    `json:"rootfs"`
+	CreatedAt time.Time `json:"created_at"`
+}
